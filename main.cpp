@@ -10,19 +10,24 @@ int main()
     ListPushBack(&list, 2);
     ListPushBack(&list, 3);
     ListPushBack(&list, 4);
+    ListPushBack(&list, 55);
+
 
     for(int i = 0; i < 10; i++)
     {
-        printf("%d ", list.nodes[i].data);
+        printf("[%d] - d:%d p:%d n:%d ||", i, list.nodes[i].data, list.nodes[i].prev, list.nodes[i].next);
     }
     printf("\n");
+    printf("\n");
 
-    ListInsertPhys(&list, 444, 3);
+    ListPopFront(&list);
 
     for(int i = 0; i < 10; i++)
     {
-        printf("%d ", list.nodes[i].data);
+        printf("[%d] - d:%d p:%d n:%d ||", i, list.nodes[i].data, list.nodes[i].prev, list.nodes[i].next);
     }
+
+    printf("\n");
 
     ListDtor(&list);
 }

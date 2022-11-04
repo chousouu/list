@@ -34,5 +34,12 @@ int ListPushBack(struct List *list, type_t value); // v tail
 
 int ListPushFront(struct List *list, type_t value); // v head
 
+int ListPopFront(struct List *list);
+
+int ListPopBack(struct List *list); // v tail
+
+int ListPopPhys(struct List *list, int pos);
+
 void ListDtor(struct List *list);
+
 #endif// LIST_H
