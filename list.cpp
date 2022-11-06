@@ -1,16 +1,37 @@
 #include "list.h"
 
+int ListVerify(struct List *list)
+{
+    if(list == NULL)
+    {
+        return LIST_NULL;
+    }
+    int problem_code = 0; 
+
+    IF_ERR(list->size < 0, NEGATIVE_SIZE);
+
+    IF_ERR(list->capacity < 0, NEGATIVE_CAP);
+
+    IF_ERR(list->size > list->capacity, CAP_SMALLER_SIZE);
+
+    IF_ERR(list->nodes == NULL, MEM_ALLOC_FAIL);
+
+
+    return problem_code;
+}
+
+
+
 int ListCtor(struct List *list, int list_cap)
 {
-    //verif: listcap < 1? & ... 
+    //list_ok
 
     Node *tmp = (Node *)realloc(list->nodes, sizeof(Node) * list_cap);
 
     if(tmp == NULL)
     {
-        //verif; 
-        printf("couldnt reallocate memory\n");
-        return 0;
+        printf("Could not reallocate memory\n");
+        return MEM_ALLOC_FAIL;
     }
     
     *list = 
@@ -23,15 +44,12 @@ int ListCtor(struct List *list, int list_cap)
         .linear = 1, 
     };
 
-
     for(int i = 0; i < list_cap; i++)
     {
-        list->nodes[i].data = 0;
+        list->nodes[i].data = POISON;
         list->nodes[i].next = (i + 1) % list_cap;
-        list->nodes[i].prev = -1; 
+        list->nodes[i].prev = -1;
     }
-
-    list->nodes[0].next = 0;
 
     //ListOK();
     
@@ -40,14 +58,22 @@ int ListCtor(struct List *list, int list_cap)
 
 int ListInsertPhys(struct List *list, type_t value, int pos) // (pos - pos_next)  ==== > (pos - dest - pos_next)
 {
-    // millions of debug if's
+    // stackok
 
-    //RESIZE IF FREE =-1
+    if(list->free < 1)
+    {
+        ListResize(list, list->capacity * 2);        
+    }
+
     int dest = list->free;
 
-    if(pos == list->tail) //is this needed or should be removed since ListPushBack()?
+    if(pos == list->tail) 
     {
-        list->tail = dest;
+        return ListPushBack(list, value);
+    }
+    if (pos == list->head)
+    {
+        return ListPushFront(list, value);
     }
     
     list->free = list->nodes[dest].next; //next .free
@@ -65,14 +91,19 @@ int ListInsertPhys(struct List *list, type_t value, int pos) // (pos - pos_next)
     list->linear = 0;
     list->size++;
 
-   //verif 
+   //list_ok 
 
    return dest; 
 }
 
 int ListPushBack(struct List *list, type_t value)
 {
-    //RESIZE IF FREE =-1
+    //list_ok
+
+    if(list->free < 1)
+    {
+        ListResize(list, list->capacity * 2);        
+    }
 
     int dest = list->free;
     
@@ -100,13 +131,19 @@ int ListPushBack(struct List *list, type_t value)
     
     list->size++;
 
+    //list_ok
+
     return dest;
 }
 
-
 int ListPushFront(struct List *list, type_t value)
 {
-    //RESIZE IF FREE =-1
+    //list_ok
+
+    if(list->free < 1)
+    {
+        ListResize(list, list->capacity * 2);        
+    }
 
     int dest = list->free;
 
@@ -124,7 +161,6 @@ int ListPushFront(struct List *list, type_t value)
         return dest;
     }
 
-
     list->nodes[dest].data = value;
 
     list->nodes[dest].next = list->head;
@@ -134,13 +170,23 @@ int ListPushFront(struct List *list, type_t value)
 
     list->head = dest;
     list->linear = 0;
+
     list->size++;
+
+    //list_ok
 
     return dest;
 }
 
-int ListPopFront(struct List *list) //head ; 100% chastnie sluchai est'
+int ListPopFront(struct List *list, int *error_code) //head ; 100% chastnie sluchai est'
 {
+    if(list->size < 1)
+    {
+        *error_code = POP_ZERO_ELEM;
+        ListDump(list, *error_code);
+        return *error_code;
+    }
+
     // check when tail == head
 
     int value = list->nodes[list->head].data;
@@ -165,9 +211,15 @@ int ListPopFront(struct List *list) //head ; 100% chastnie sluchai est'
     return value;
 }
 
-int ListPopBack(struct List *list)
+int ListPopBack(struct List *list, int *error_code)
 {
     // check when tail == head
+    if(list->size < 1)
+    {
+        *error_code = POP_ZERO_ELEM;
+        ListDump(list, *error_code);
+        return *error_code;
+    }
 
     int value = list->nodes[list->tail].data;
     
@@ -188,8 +240,15 @@ int ListPopBack(struct List *list)
     return value;
 }
 
-int ListPopPhys(struct List *list, int pos)
+int ListPopPhys(struct List *list, int pos, int *error_code)
 {
+    if(list->size < 1)
+    {
+        *error_code = POP_ZERO_ELEM;
+        ListDump(list, *error_code);
+        return *error_code;
+    }
+
     if(pos == list->tail)
     {
         return ListPopBack(list);
@@ -221,6 +280,55 @@ int ListPopPhys(struct List *list, int pos)
     list->size--;
 
     return value;
+}
+
+int ListResize(struct List *list, int cap)
+{
+    Node *tmp = (Node *)realloc(list->nodes, sizeof(Node) * (cap));
+    
+    if(tmp == NULL) 
+    {
+        printf("ERROR could not realloc\n"); 
+        return 0;
+    } 
+    
+    list->nodes = tmp;
+    
+    if(cap > list->capacity)
+    {
+        for(int i = list->capacity; i < cap; i++)
+        {                                                   
+            list->nodes[i].data = 0;                        
+            list->nodes[i].next = (i + 1) % cap;
+            list->nodes[i].prev = -1;              
+        }
+        list->free = list->capacity;
+    } 
+    list->capacity = cap;
+
+    return 1;  
+}
+
+int LogicToPhysAddr(List *list, long num)
+{
+    if(list->linear)
+    {
+        return num + list->head - 1;
+    }
+    
+    long elem  = list->head;
+    long steps = 1;
+
+    for(; steps < num; elem = list->nodes[elem].next, steps++);
+    
+    return elem;
+}
+
+
+
+void ListDump(struct List *list, int problem_code)
+{
+
 }
 
 void ListDtor(struct List *list)
