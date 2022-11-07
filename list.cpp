@@ -1,5 +1,7 @@
 #include "list.h"
 
+FILE *logfile = NULL;
+
 int ListVerify(struct List *list)
 {
     if(list == NULL)
@@ -16,16 +18,81 @@ int ListVerify(struct List *list)
 
     IF_ERR(list->nodes == NULL, MEM_ALLOC_FAIL);
 
-
     return problem_code;
 }
 
-
-
-int ListCtor(struct List *list, int list_cap)
+void DecodeProblem(struct List *list, int problem_code)
 {
-    //list_ok
+    FPRINT_ERR(LIST_NULL, "LIST IS NULL\n");
 
+    FPRINT_ERR(NEGATIVE_SIZE, "NEGATIVE SIZE (= %d)\n", list->size);
+
+    FPRINT_ERR(NEGATIVE_CAP, "NEGATIVE CAPACITY (= %d)\n", list->capacity);
+
+    FPRINT_ERR(CAP_SMALLER_SIZE, "CAP < SIZE (%d < %d)\n", list->capacity, list->size);
+
+    FPRINT_ERR(MEM_ALLOC_FAIL, "COULDNT ALLOCATE MEMORY FOR LIST NODES\n");
+
+    FPRINT_ERR(POP_ZERO_ELEM, "ZERO ELEM POP\n");
+
+    return;
+}
+
+void ListDump(struct List *list, int problem_code)
+{
+    logfile = fopen("log.txt", "a");
+
+    if(logfile == NULL)
+    {
+        printf("Cannot open the file!\n");
+        return;
+    }
+    fprintf(logfile, "=========================\n");
+    fprintf(logfile, "%s at %s (%d):\n", list->Info.listname, list->Info.file_ctor, list->Info.line_ctor);
+    
+    // if(problem_code)
+    {
+        DecodeProblem(list, problem_code);
+
+        fprintf(logfile,"{\n");
+
+            fprintf(logfile, "size = %d, cap = %d\n", list->size, list->capacity);
+
+            fprintf(logfile,"{\t\n");
+
+                ListPrint(list);
+
+            fprintf(logfile,"}\t\n");
+
+        fprintf(logfile,"}\n");
+    }
+
+    fclose(logfile);
+}
+
+void ListPrint(struct List *list)
+{
+    int i = 0;
+    int print_to = list->capacity;
+
+    fprintf(logfile, "N  |\tPREV\t|\t DATA\t |\tNEXT\n");
+    for(; i < print_to; i++)
+    {
+        fprintf(logfile, "%-3d|%-12d|%-12d|%-12d", i, list->nodes[i].prev, list->nodes[i].data, list->nodes[i].next);
+        if(i == list->head)
+        {
+            fprintf(logfile, "<----HEAD");
+        }
+        if(i == list->tail)
+        {
+            fprintf(logfile, "<----TAIL");
+        }
+        fprintf(logfile, "\n");
+    }
+}
+
+int ListCtor(struct List *list, int list_cap VAR_INFO)
+{   
     Node *tmp = (Node *)realloc(list->nodes, sizeof(Node) * list_cap);
 
     if(tmp == NULL)
@@ -41,8 +108,13 @@ int ListCtor(struct List *list, int list_cap)
         .head = 0,
         .tail = 0,
         .free = 1,
-        .linear = 1, 
+        .linear = 1,
     };
+        #ifdef DEBUG_MODE
+        list->Info.listname  = name;
+        list->Info.file_ctor = file;
+        list->Info.line_ctor = line;
+        #endif
 
     for(int i = 0; i < list_cap; i++)
     {
@@ -50,15 +122,16 @@ int ListCtor(struct List *list, int list_cap)
         list->nodes[i].next = (i + 1) % list_cap;
         list->nodes[i].prev = -1;
     }
+    list->nodes[0].data = 0;
 
-    //ListOK();
+    List_OK();
     
     return 1;
 }
 
 int ListInsertPhys(struct List *list, type_t value, int pos) // (pos - pos_next)  ==== > (pos - dest - pos_next)
 {
-    // stackok
+    List_OK();
 
     if(list->free < 1)
     {
@@ -91,14 +164,14 @@ int ListInsertPhys(struct List *list, type_t value, int pos) // (pos - pos_next)
     list->linear = 0;
     list->size++;
 
-   //list_ok 
+    List_OK();
 
    return dest; 
 }
 
 int ListPushBack(struct List *list, type_t value)
 {
-    //list_ok
+    List_OK();
 
     if(list->free < 1)
     {
@@ -131,14 +204,14 @@ int ListPushBack(struct List *list, type_t value)
     
     list->size++;
 
-    //list_ok
+    List_OK();
 
     return dest;
 }
 
 int ListPushFront(struct List *list, type_t value)
 {
-    //list_ok
+    List_OK();
 
     if(list->free < 1)
     {
@@ -173,13 +246,15 @@ int ListPushFront(struct List *list, type_t value)
 
     list->size++;
 
-    //list_ok
+    List_OK();
 
     return dest;
 }
 
 int ListPopFront(struct List *list, int *error_code) //head ; 100% chastnie sluchai est'
-{
+{   
+    List_OK();
+
     if(list->size < 1)
     {
         *error_code = POP_ZERO_ELEM;
@@ -208,11 +283,15 @@ int ListPopFront(struct List *list, int *error_code) //head ; 100% chastnie sluc
 
     list->size--;
 
+    List_OK();
+
     return value;
 }
 
 int ListPopBack(struct List *list, int *error_code)
 {
+    List_OK();
+
     // check when tail == head
     if(list->size < 1)
     {
@@ -237,11 +316,15 @@ int ListPopBack(struct List *list, int *error_code)
 
     list->size--;
 
+    List_OK();
+
     return value;
 }
 
 int ListPopPhys(struct List *list, int pos, int *error_code)
 {
+    List_OK();
+
     if(list->size < 1)
     {
         *error_code = POP_ZERO_ELEM;
@@ -251,11 +334,11 @@ int ListPopPhys(struct List *list, int pos, int *error_code)
 
     if(pos == list->tail)
     {
-        return ListPopBack(list);
+        return ListPopBack(list, error_code);
     }
     else if(pos == list->head)
     {
-        return ListPopFront(list);
+        return ListPopFront(list, error_code);
     }
 
     int value = list->nodes[pos].data;
@@ -278,6 +361,8 @@ int ListPopPhys(struct List *list, int pos, int *error_code)
     
     list->linear = 0;
     list->size--;
+
+    List_OK();
 
     return value;
 }
@@ -322,13 +407,6 @@ int LogicToPhysAddr(List *list, long num)
     for(; steps < num; elem = list->nodes[elem].next, steps++);
     
     return elem;
-}
-
-
-
-void ListDump(struct List *list, int problem_code)
-{
-
 }
 
 void ListDtor(struct List *list)
