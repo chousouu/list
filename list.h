@@ -106,5 +106,6 @@ void DecodeProblem(struct List *list, int problem_code);
 
 void ListDump(struct List *list, int problem_code);
 
+void GraphDump(struct List *list, FILE *graph);
 
 #endif// LIST_H

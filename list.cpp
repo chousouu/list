@@ -50,7 +50,7 @@ void ListDump(struct List *list, int problem_code)
     fprintf(logfile, "=========================\n");
     fprintf(logfile, "%s at %s (%d):\n", list->Info.listname, list->Info.file_ctor, list->Info.line_ctor);
     
-    // if(problem_code)
+    if(problem_code)
     {
         DecodeProblem(list, problem_code);
 
@@ -67,8 +67,66 @@ void ListDump(struct List *list, int problem_code)
         fprintf(logfile,"}\n");
     }
 
+    //graph dump 
+    //dot dotInput.dot -Tpng -o dumps/Img.png
+
+
     fclose(logfile);
+
+    return;
 }
+
+void GraphDump(struct List *list, FILE *graph)
+{
+    fprintf(graph, "digraph g {\n");
+
+    fprintf(graph, 
+                "fontname= \"Helvetica,Arial,sans-serif\"\n"
+                "node [fontname=\"Helvetica,Arial,sans-serif\"]\n"
+                "edge [fontname=\"Helvetica,Arial,sans-serif\"]\n"
+                "graph [rankdir = \"LR\"];\n"
+                "node [fontsize = \"16\" shape = \"ellipse\"];\n"
+                "edge [];\n"
+            );
+
+    //create nodes
+    for(int i = 0; i < list->capacity; i++)
+    {
+        fprintf(graph, 
+                    " \"node%d\" [\n"
+                    "label = \"<phys> id: %d | <data> data: %d | { <prev> prev: %d| <next> next: %d}\"\n"
+                    "shape = \"record\"\n"
+                    "];\n"
+               , i, i, list->nodes[i].data, list->nodes[i].prev, list->nodes[i].next);
+    }
+
+    for(int i = 0; i < list->capacity; i++)
+    {
+        fprintf(graph, 
+                    "\"node%d\":next -> \"node%d\":prev\n",
+                    i, list->nodes[i].next
+                );
+        if(list->nodes[i].prev > -1)
+        fprintf(graph, 
+                    "\"node%d\":prev -> \"node%d\":next\n",
+                    i, list->nodes[i].prev
+                );
+    }
+
+    fprintf(graph,  
+                "HEAD[shape=\"hexagon\",style=\"filled\",fillcolor=\"green\"];\n"
+                "HEAD -> \"node%d\"\n", list->head
+            );
+
+    fprintf(graph,  
+                "TAIL[shape=\"rpromoter\",style=\"filled\",fillcolor=\"red\"];\n"
+                "TAIL -> \"node%d\"\n", list->tail
+            );
+    fprintf(graph, "}");
+
+    return;
+}
+
 
 void ListPrint(struct List *list)
 {
@@ -251,7 +309,7 @@ int ListPushFront(struct List *list, type_t value)
     return dest;
 }
 
-int ListPopFront(struct List *list, int *error_code) //head ; 100% chastnie sluchai est'
+int ListPopFront(struct List *list, int *error_code) //head 
 {   
     List_OK();
 
@@ -261,8 +319,6 @@ int ListPopFront(struct List *list, int *error_code) //head ; 100% chastnie sluc
         ListDump(list, *error_code);
         return *error_code;
     }
-
-    // check when tail == head
 
     int value = list->nodes[list->head].data;
 
@@ -292,12 +348,16 @@ int ListPopBack(struct List *list, int *error_code)
 {
     List_OK();
 
-    // check when tail == head
     if(list->size < 1)
     {
         *error_code = POP_ZERO_ELEM;
         ListDump(list, *error_code);
         return *error_code;
+    }
+
+    if(list->tail == list->head)
+    {
+        return ListPopFront(list, error_code);
     }
 
     int value = list->nodes[list->tail].data;
@@ -416,7 +476,7 @@ void ListDtor(struct List *list)
     list->head     = POISON;
     list->tail     = POISON;
     list->free     = POISON;
-    list->linear   = 0;
+    list->linear   = 0; 
 
     return;
 }

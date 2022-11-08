@@ -11,17 +11,11 @@ int main()
     printf("SIZE : %d\n", list.size);
     ListPopBack(&list, &err_code);
     ListPopBack(&list, &err_code);
-    ListPopBack(&list, &err_code);
-    ListPopBack(&list, &err_code);
-    ListPopBack(&list, &err_code);
 
-    // ListPushBack(&list, 11);
-    // ListPushBack(&list, 12);
-    // ListPushBack(&list, 13);
-    // ListPushBack(&list, 14);
-    // ListPushBack(&list, 15);
+    ListPushBack(&list, 13);
+    ListPushBack(&list, 14);
+    ListPushBack(&list, 15);
 
-    // printf("ppopoped %d\n", ListPopFront(&list));
     for(int i = 0; i < list.capacity; i++)
     {
         printf("[%d] - d:%d p:%d n:%d\n", i, list.nodes[i].data, list.nodes[i].prev, list.nodes[i].next);
@@ -30,10 +24,10 @@ int main()
     printf("\n");
     printf("\n");
 
-    // for(int i = 16; i < 23; i++)
-    // {
-    //     ListPushFront(&list, i);
-    // }
+    for(int i = 16; i < 18; i++)
+    {
+        ListPushFront(&list, i);
+    }
 
     for(int i = 0; i < list.capacity; i++)
     {
@@ -41,6 +35,16 @@ int main()
     }
 
     printf("\n TAIL = %d HEAD = %d\n", list.tail, list.head);
+
+    FILE *graph = fopen("dotInput2.dot", "w");
+    if(graph == NULL) 
+    {
+        printf("cannot open graph file!\n");
+        return 0;
+    }
+    GraphDump(&list, graph);
+
+    fclose(graph);
 
     ListDtor(&list);
 
