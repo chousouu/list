@@ -122,6 +122,18 @@ void GraphDump(struct List *list, FILE *graph)
                 "TAIL[shape=\"rpromoter\",style=\"filled\",fillcolor=\"red\"];\n"
                 "TAIL -> \"node%d\"\n", list->tail
             );
+
+    for(int i = 0; i < list->capacity; i++)
+    {
+        fprintf(graph, 
+                    " \"node%d\" -> \"node%d\"[weight=1000, style=\"invis\"]\n", i, list->nodes[i].next  
+                );
+        if(list->nodes[i].prev > -1)
+        fprintf(graph, 
+                " \"node%d\" -> \"node%d\"[weight=1000, style=\"invis\"]\n", i, list->nodes[i].prev  
+            );
+    }
+
     fprintf(graph, "}");
 
     return;
