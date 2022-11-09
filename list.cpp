@@ -67,10 +67,6 @@ void ListDump(struct List *list, int problem_code)
         fprintf(logfile,"}\n");
     }
 
-    //graph dump 
-    //dot dotInput.dot -Tpng -o dumps/Img.png
-
-
     fclose(logfile);
 
     return;
@@ -203,13 +199,6 @@ int ListInsertPhys(struct List *list, type_t value, int pos) // (pos - pos_next)
 {
     List_OK();
 
-    if(list->free < 1)
-    {
-        ListResize(list, list->capacity * 2);        
-    }
-
-    int dest = list->free;
-
     if(pos == list->tail) 
     {
         return ListPushBack(list, value);
@@ -218,6 +207,13 @@ int ListInsertPhys(struct List *list, type_t value, int pos) // (pos - pos_next)
     {
         return ListPushFront(list, value);
     }
+
+    if(list->free < 1)
+    {
+        ListResize(list, list->capacity * 2);        
+    }
+
+    int dest = list->free;
     
     list->free = list->nodes[dest].next; //next .free
 
